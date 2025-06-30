@@ -1,15 +1,21 @@
+Создание image (для этого пишем в машине ls /var/tmp/Debian-12-nocloud-amd64-20231210-1591.qcow2)
 # 1. Настройка ВМ
-1.	Настройка сети (выдаем ip-адреса)
-2.	Создание image (для этого пишем в машине ls /var/tmp/Debian-12-nocloud-amd64-20231210-1591.qcow2)
-3.  В VR настраиваем сеть, пишем в /etc/systemd/resolv.conf nameserver 8.8.8.8
-4.  На основной машине (на которой установлена OpenNebula) пишем правила для iptables:
-```
-    iptables -t nat -A POSTROUTING -s ip-адрес сетевого интерфейса/24 -o ens3 -j MASQUERADE
-    iptables -t nat -A POSTROUTING -s 172.16.100.0/24 – ens192 -j MASQUERADE
-    apt install iptables-persistent
-    iptables-save > /etc/iptables/rules.v4
-```
-5.  На VM3 пишем iptables -t nat -A POSTROUTING -o ens3(или другой интерфейс, не altname) -j MASQUERADE
+1.	172.18.0.1/24(внешняя сеть)
+2.	192.168.1.1/24(внутренняя сеть)
+3.	на opennebula /etc/sysctl.conf net.ipv4.ip_forward=1
+4.	sysctl -p
+5.	iptables -t nat -A POSTROUTING -j MASQUERADE -o ens3 -s 192.168.1.0/24  iptables-save > /root/rules or /etc/iptables/rules.v4
+6.	crontab -e @reboot /sbin/iptables-restore < /root/rules
+7.  В VR настраиваем сеть, пишем в /etc/systemd/resolv.conf nameserver 8.8.8.8
+8.  на всех машинах с дебиан rm /run/systemd/network/10-netplan-all-en.network и apt purge netplan.io -y
+9.  /etc/systemd/network/wire.network во внешней сети прописываем gateway и dns, во внутренней:
+10.  [Router]
+11.  Destination=0.0.0.0/0
+12.  Gateway=192.168.1.1/24
+13.  Metric=0
+14.  на vr прописываем iptables -t nat -A POSTROUTING -s 172.18.0.0/24 -o ens4(или другой) -j MASQUERADE
+15.  iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o ens4(или другой) -j MASQUERADE
+5.  #На VM3 пишем iptables -t nat -A POSTROUTING -o ens3(или другой интерфейс, не altname) -j MASQUERADE
 6.  Обновляем пакеты и устанавливаем утилиты на каждую машину
 7.  Настройка
 <hr>
@@ -20,6 +26,8 @@
 3.  Создаем пользователей user (useradd user, usermod -aG sudo user) и добавляем пользователя в visudo (user ALL=(ALL) NOPASSWD: ALL)
 4.  Пишем ssh-copy-id user@ip-адрес машины
 <hr>
+
+
 
 # 3. db
 1.  Если не хватает памяти пишем команды growpart /dev/sda 1 и resize2fs /dev/sda1
@@ -121,6 +129,8 @@ server {
         }
 }
 с vr прописать curl http://приватный ip_vr:5000 
+
+
 
 
 6. Locust
