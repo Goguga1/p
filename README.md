@@ -21,21 +21,152 @@
 4.  Пишем ssh-copy-id user@ip-адрес машины
 <hr>
 
-# 3. Доп штуки
+# 3. db
 1.  Если не хватает памяти пишем команды growpart /dev/sda 1 и resize2fs /dev/sda1
-2.  Запуск докера 
-```
-    docker build -t myapp . 
-    docker run -d -p 5000:5000 –name app myapp
+
 ```
 3. Настройка Postgresql
 <hr>
 ```
-    sudo -u postgres psql -c “CREATE USER myuser WITH PASSWORD ‘student’;”
-    sudo -u postgres psql -с “CREATE DATABASE mydb OWNER myuser;”
+apt install postgresql postgresql-contrib
+su - postgres
+create user -P --interactive
+devops
+n
+y
+y
+psql
+CREATE DETEBASE test OWNER devops;
+\|
+
 ```
 <hr>
-    Для доступа к БД необходимо зайти в /etc/postgresql/15/main/postgresql.conf и написать listen_address = “*” и так же зайти в /etc/postgresql/15/main/pg_hba.conf и в самом низу под IPV4 local connections: написать host all myuser 172.18.100.0/24 md5 и потом все перезагрузить systemctl restart postgresql
+    Для доступа к БД необходимо зайти в /etc/postgresql/15/main/postgresql.conf и написать listen_address = “*” и так же зайти в /etc/postgresql/15/main/pg_hba.conf и в самом низу под IPV4 local connections: заменить последнюю на host all all ip webapp и потом все перезагрузить systemctl restart postgresql
+4.webapp
+apt-get update && apt-get install docker.io
+nano web-app.py
+#!/usr/bin/env python3
+
+from flask import Flask, request
+import tomllib
+import psycopg2
+import time
+import math
+
+app = Flask(__name__)
+
+with open('config.toml', 'rb') as f:
+  data = tomllib.load(f)
+
+def _check_postgres():
+  try:
+    conn = psycopg2.connect(dbname=data['DBNAME'], user=data['DBUSER'], host=data['DBHOST'], password=data['DBPASSWORD'], connect_timeout=1)
+    conn.close()
+    return True
+  except:
+    return False
+
+@app.route('/')
+def hello():
+  return 'hello world'
+
+@app.route('/status')
+def status():
+  return 'app is ok' if _check_postgres() else 'fail connect to database'
+
+if __name__ == '__main__':
+  app.run(host=data['HOST'])
+
+nano config.toml
+HOST = '0.0.0.0'
+DBNAME = 'test'
+DBUSER = 'devops'
+DBHOST = 'ip postgre' 
+DBPASSWORD = 'devops'
+
+nano Dockerfile
+FROM python:3.11-alpine
+RUN pip install flask
+RUN pip install psycopg2-binary
+COPY web-app.py /web-app.py
+COPY config.toml /config.toml
+CMD ["python3", "web-app.py"]
+
+docker run -p 5001:5000 --name=webapp1 --restart=always -d webapp
+docker run -p 5002:5000 --name=webapp2 --restart=always -d webapp
+
+5.балансировщик nginx(router)
+apt-get update && apt-get install nginx
+nano /etc/nginx/sites-avalible/default
+upstream app {
+        server ip_webapp:5001;
+        server ip_webapp:5002;
+}
+server {
+        listen 80 default_server;
+        server_name _;
+        location / {
+                proxy_pass http://app;
+                allow сетка адресов публичных(locust)/24;
+                deny all;
+        }
+}
+server {
+        listen 5000 default_server;
+        server_name _;
+        location / {
+                proxy_pass http://app;
+                allow сетка адресов приватных/24;
+                deny all;
+        }
+}
+с vr прописать curl http://приватный ip_vr:5000 
+
+
+6. Locust
+```
+#apt install -y python3 python3-pip python3-venv
+#pip3 install locust
+
+#locust -f locust.py --headless -u 100 -r 20 --host=http://ip-адрес_ВМ
+
+apt-get install pipx
+pipx install locust
+pipx ensurepath
+nano /root/locustfile.py
+from locust import HttpUser, task, between
+
+class WebsiteTestUser(HttpUser):
+    wait_time = between(5, 90)
+
+    def on_start(self):
+        pass
+    def on_stop(self):
+        pass
+    @task()
+    def hello_world(self):
+        self.client.get("/")
+        self.client.get("/status")
+
+locust --headless --users 100 --spawn-rate 10 -H http://публичный ip_vr --run-time 10s
+```
+Для доступа к веб-интерфейсу locust пишем в браузере http://ip-адрес_locust:8089
+
+7. Использование Debian образа для создания image в самой OpenNebula, который был заранее загружен в директорию
+Используй команду 
+```
+find / -name "*.qcow2"
+```
+Для поиска файла one_auth используй эту же команду:
+```
+find / -name "one_auth"
+```
+
+8. Включаем форвардинг:
+```
+echo 1 > /proc/sys/net/ipv4/ip_forward
+echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.d/98-forward.conf
+```
 
 4. HAproxy
 Пишем в /etc/haproxy/haproxy.cfg:
@@ -58,30 +189,4 @@ backend webservers
 ```
 Crontab -e
 */2 * * * * /usr/local/bin/autoscale.sh >> /var/log/autoscale.log 2>&1
-```
-
-6. Locust
-```
-apt install -y python3 python3-pip python3-venv
-pip3 install locust
-
-locust -f locust.py --headless -u 100 -r 20 --host=http://ip-адрес_ВМ
-
-```
-Для доступа к веб-интерфейсу locust пишем в браузере http://ip-адрес_ВМ:8089
-
-7. Использование Debian образа для создания image в самой OpenNebula, который был заранее загружен в директорию
-Используй команду 
-```
-find / -name "*.qcow2"
-```
-Для поиска файла one_auth используй эту же команду:
-```
-find / -name "one_auth"
-```
-
-8. Включаем форвардинг:
-```
-echo 1 > /proc/sys/net/ipv4/ip_forward
-echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.d/98-forward.conf
 ```
