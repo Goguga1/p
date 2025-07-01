@@ -1,3 +1,13 @@
+nano/etc/network/interfaces.d/minionebr.cfg
+auto minitwobr
+iface minitwobr inet static
+address 
+network
+netmask 255.255.255.0
+bridge_stp off 
+bridge_fd 0
+bridge_maxwait 0
+bridge_ports tap0
 Создание image (для этого пишем в машине ls /var/tmp/Debian-12-nocloud-amd64-20231210-1591.qcow2)
 # 1. Настройка ВМ
 1.	172.18.0.1/24(внешняя сеть)
