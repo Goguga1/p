@@ -167,3 +167,70 @@ ip ospf authentication message-digest
 ip ospf message-digest-key 1 md5 P@ssw0rd
 do wr mem
 ПОСЛЕ ПРОДЕЛАННОЙ РАБОТЫ, РАСКОММЕНТИРУЙТЕ РЕПОЗИТОРИЙ АСТРЫ И ЗАКОММЕНТИРУЙТЕ РЕПОЗИТОРИЙ DEBIAN!!! ВОТ ТАК
+//
+Настройка  протокола динамической конфигурации хостов (DHCP)
+на hq-rtr
+mcedit /etc/resolv.conf
+nameserver 8.8.8.8
+apt update
+apt install dnsmasq
+mcedit /etc/dnsmasq.conf
+И внесем в него следующие строки (можно прямо в начало файла):
+no-resolv
+dhcp-range=192.168.2.2,192.168.2.14,9999h
+dhcp-option=3,192.168.2.1
+dhcp-option=6,192.168.1.2
+interface=eth1.200
+systemctl restart dnsmasq
+systemctl status dnsmasq
+//
+Проверим работу службы на HQ-CLI, перезапускаем службу network на нём и посмотрим, выдался ли нам адрес:
+systemctl restart network
+ip a
+//
+Настройка DNS для офисов HQ и BR
+Для начала необходимо отключить несовместимую службу bind если она есть, командой
+systemctl disable --now bind
+Для работы DNS есть служба dnsmasq (она же и для DHCP)
+Установим её на наш сервер HQ-SRV (если есть, как у нас, то переходите к следующему шагу).
+Ещё нам нужно добавить в resolv.conf сервер Google, иначе мы не сможем обновить репозитории, поэтому идём его редактировать следующей командой:
+mcedit /etc/resolv.conf
+И добавляем следующую строку в него:
+nameserver 8.8.8.8
+Обновим пакеты и установим её командами:
+apt-get update
+apt-get install dnsmasq (Установка пакета dnsmasq)
+systemctl enable --now dnsmasq (Добавление службы в автозапуск)
+Затем откроем файл для редактирования конфигурации нашего DNS-сервера:
+mcedit /etc/dnsmasq.conf
+И добавляем в неё строки (для удобства прям с первой строки файла):
+no-resolv (не будет использовать /etc/resolv.conf)
+domain=au-team.irpo
+server=8.8.8.8 (адрес общедоступного DNS-сервера)
+interface=* (на каком интерфейсе будет работать служба)
+address=/hq-rtr.au-team.irpo/192.168.1.1
+ptr-record=1.1.168.192.in-addr.arpa,hq-rtr.au-team.irpo
+cname=moodle.au-team.irpo,hq-rtr.au-team.irpo
+cname=wiki.au-team.irpo,hq-rtr.au-team.irpo
+
+address=/br-rtr.au-team.irpo/192.168.4.1
+
+address=/hq-srv.au-team.irpo/192.168.1.2
+ptr-record=2.1.168.192.in-addr.arpa,hq-srv.au-team.irpo
+
+address=/hq-cli.au-team.irpo/192.168.2.2 (Смотрите адрес на HQ-CLI, т.к он выдаётся по DHCP)
+ptr-record=2.2.168.192.in-addr.arpa,hq-cli.au-team.irpo
+
+address=/br-srv.au-team.irpo/192.168.4.2
+
+Теперь необходимо добавить строку 192.168.1.1<--->hq-rtr.au-team.irpo в файл /etc/hosts:
+mcedit /etc/hosts
+systemctl restart dnsmasq
+Проверим пинг сначала с HQ-SRV на google.com и hq-rtr.au-team.irpo:
+ping google.com
+ping hq-rtr.au-team.irpo
+Теперь проверим пинг с HQ-CLI:
+ping google.com
+ping hq-rtr.au-team.irpo
+//
+Создание локальных учетных записей
