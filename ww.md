@@ -265,7 +265,7 @@ ptr-record=2.1.168.192.in-addr.arpa,hq-srv.au-team.irpo
 address=/hq-cli.au-team.irpo/192.168.2.6 (Смотреть адрес на HQ-CLI, т.к он выдаётся по DHCP)
 ptr-record=6.2.168.192.in-addr.arpa,hq-cli.au-team.irpo
 address=/br-srv.au-team.irpo/192.168.4.2
-(F2 → F10) → mcedit /etc/hosts → 192.168.1.1	hq-rtr.au-team.irpo → (F10)
+(F2 → F10) → mcedit /etc/hosts → 192.168.1.1(tab)hq-rtr.au-team.irpo → (F10)
 systemctl restart dnsmasq
 mcedit /etc/dnsmasq.conf (После настройки samba)
 server=/au-team.irpo/192.168.4.2 (Добавить перед server=8.8.8.8)
