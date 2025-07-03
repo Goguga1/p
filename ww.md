@@ -91,7 +91,7 @@ no-resolv
 dhcp-range=192.168.2.2,192.168.2.14,9999h
 dhcp-option=3,192.168.2.1
 dhcp-option=6,192.168.1.2
-interface=eth2
+interface=eth1.200
 systemctl restart dnsmasq → systemctl status dnsmasq
 useradd net_admin -m
 passwd net_admin → P@$$word
