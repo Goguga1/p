@@ -38,7 +38,7 @@ crontab -e
 @reboot /bin/systemctl restart network
 //
 настроим часовой пояс на всех устройствах 
-timedatectl set-timezone Asia/Barnaul
+timedatectl set-timezone Europe/Moscow
 //
 на всех роутерах убераем комент с net.ipv4.ip_forward=1 в файле /etc/sysctl.conf и после пишем sysctl -p
 //
