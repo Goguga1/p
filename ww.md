@@ -23,6 +23,7 @@ export EDITOR=mcedit → crontab -e
 reboot
 iptables -t nat -L
 
+
 HQ-RTR:
 user → useruser → sudo -i
 hostnamectl set-hostname hq-rtr.au-team.irpo; exec bash
@@ -99,6 +100,9 @@ mcedit /etc/sudoers
 net_admin	ALL=(ALL:ALL) NOPASSWD: ALL (Добавить в самый конец)
 [mcedit /etc/resolv.conf] → [nameserver 8.8.8.8] → [(F2 → F10)]
 [systemctl restart networking]
+
+
+[МОДУЛЬ 2]
 apt update → apt install chrony → systemctl status chrony
 timedatectl → mcedit /etc/chrony/chrony.conf
 local stratum 5
@@ -151,6 +155,8 @@ rm -rf /etc/nginx/sites-enabled/default
 ln -s /etc/nginx/sites-available/proxy /etc/nginx/sites-enabled
 ls -la /etc/nginx/sites-enabled
 systemctl restart nginx
+
+
 BR-RTR:
 user → useruser → sudo -i
 hostnamectl set-hostname br-rtr.au-team.irpo; exec bash
@@ -231,7 +237,7 @@ iptables -t nat -A PREROUTING -p tcp -d 192.168.4.1 --dport 80 -j DNAT --to-dest
 iptables -t nat -A PREROUTING -p tcp -d 192.168.4.1 --dport 2024 -j DNAT --to-destination 192.168.4.2:2024
 iptables-save > /root/rules
 reboot
-HQ-SRV:
+![Uploading image.png…]():
 user → user → su – → root
 hostnamectl hostname hq-srv.au-team.irpo; exec bash
 timedatectl set-timezone Europe/Moscow → timedatectl status
@@ -285,6 +291,9 @@ AllowUsers sshuser
 PermitRootLogin no
 Banner /root/banner → (F2 → F10) → echo “Authorized access only” > /root/banner
 systemctl enable --now sshd → systemctl restart sshd
+
+
+[МОДУЛЬ2]
 Добавить 3 диска по 1Гб → lsblk
 mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/sd[b-d]
 cat /proc/mdstat
@@ -328,6 +337,8 @@ max_input_vars = 5000 (раскомментировать и изменить з
 cd /var/www/html → ls → rm index.html → y → Enter → systemctl restart httpd2
 mcedit /var/www/html/config.php
 $CFG->wwwroot = ‘http://moodle.au-team.irpo’; → (F2 → F10)
+
+
 HQ-CLI:
 user → user → su – → root
 hostnamectl hostname hq-cli.au-team.irpo; exec bash
@@ -344,6 +355,9 @@ ping google.com
 ping hq-rtr.au-team.irpo
 dig moodle.au-team.irpo
 dig wiki.au-team.irpo
+
+
+[МОДУЛЬ 2]
 Пуск → Центр управления системой → root → Аутентификация → Домен Active Directory → Домен: AU-TEAM.IRPO → Рабочая группа: AU-TEAM → Имя компьютера: hq-cli → Галочка восстановить файлы ... → Применить → Да → Administrator → 123qweR% → OK → OK
 reboot
 user → user → su – → root
@@ -402,6 +416,8 @@ ssh -p 2024 sshuser@192.168.4.1 → P@ssw0rd
 Пуск → Mozilla Firefox → http://wiki.au-team.irpo
 apt-get update → apt-get install yandex-browser-stable
 Пуск → Yandex Browser
+
+
 BR-SRV:
 user → user → su – → root
 hostnamectl hostname br-srv.au-team.irpo; exec bash
@@ -430,6 +446,8 @@ PermitRootLogin no
 Banner /root/banner
 systemctl enable --now sshd
 systemctl restart sshd
+
+[МОДУЛЬ2]
 [apt-get remove bind]
 mcedit /etc/resolv.conf → (F8 → F8 → F8 → F8) → nameserver 192.168.1.2
 apt-get update → apt-get install task-samba-dc
